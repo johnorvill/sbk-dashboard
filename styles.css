@@ -156,13 +156,15 @@ th {
   color: var(--muted);
 }
 
-label {
+.controls-grid label,
+.plot-controls label {
   display: grid;
   min-width: 0;
 }
 
 select,
 input[type="search"] {
+  display: block;
   width: 100%;
   margin-top: 8px;
   border: 1px solid var(--line);
@@ -170,6 +172,8 @@ input[type="search"] {
   background: var(--panel-strong);
   color: var(--text);
   padding: 12px 14px;
+  min-height: 48px;
+  line-height: 1.2;
   font: inherit;
 }
 
