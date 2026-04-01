@@ -1,4 +1,4 @@
-const dataset = window.__SBK_DATA__;
+﻿const dataset = window.__SBK_DATA__;
 
 if (!dataset) {
   throw new Error("Dataset saknas. Kör tools/convert_excel.py först.");
@@ -35,9 +35,9 @@ const tableColumns = [
 const scatterMetrics = [
   { key: "Reggade 2019 - 2023", label: "Registrerade", type: "number" },
   { key: "MH %", label: "MH %", type: "percent" },
-  { key: "HD Rtg %", label: "HD-r?ntgen %", type: "percent" },
+  { key: "HD Rtg %", label: "HD-röntgen %", type: "percent" },
   { key: "HD-Fel %", label: "HD-fel %", type: "percent" },
-  { key: "ED Rtg %", label: "ED-r?ntgen %", type: "percent" },
+  { key: "ED Rtg %", label: "ED-röntgen %", type: "percent" },
   { key: "ED-Fel %", label: "ED-fel %", type: "percent" },
   { key: "MT %", label: "MT %", type: "percent" },
   { key: "Ext/Utst %", label: "Ext/Utst %", type: "percent" },
@@ -81,13 +81,11 @@ const elements = {
   kennelTableTitle: document.querySelector("#kennelTableTitle"),
 };
 
-const breeds = [...dataset.breeds].sort((a, b) => byNumberDesc(a["Reg 2019 - 2023"], b["Reg 2019 - 2023"]));
+const breeds = [...dataset.breeds]
+  .filter((row) => row["Ras"] && row["Ras"] !== "Totalt")
+  .sort((a, b) => toNumber(b["Reg 2019 - 2023"]) - toNumber(a["Reg 2019 - 2023"]));
 const kennels = dataset.kennels.filter((row) => row["Kennel"] && row["Ras"]);
 const breedLookup = new Map(breeds.map((row) => [row["Ras"], row]));
-
-function byNumberDesc(a, b) {
-  return toNumber(b) - toNumber(a);
-}
 
 function toNumber(value) {
   return Number.isFinite(value) ? value : Number(value) || 0;
@@ -105,6 +103,13 @@ function asInt(value) {
   return Math.round(toNumber(value)).toLocaleString("sv-SE");
 }
 
+function safeText(value, fallback = "Ingen data") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  return String(value);
+}
+
 function formatMetricValue(metricKey, value) {
   const metric = scatterMetrics.find((item) => item.key === metricKey) || tableColumns.find((item) => item.key === metricKey);
   if (!metric) {
@@ -119,11 +124,8 @@ function formatMetricValue(metricKey, value) {
   return asInt(value);
 }
 
-function safeText(value, fallback = "Ingen data") {
-  if (value === null || value === undefined || value === "") {
-    return fallback;
-  }
-  return String(value);
+function escapeAttribute(value) {
+  return String(value).replace(/"/g, "&quot;");
 }
 
 function scoreKennel(row) {
@@ -176,6 +178,19 @@ function getKennelOptions() {
     .sort((a, b) => a.localeCompare(b, "sv"));
 }
 
+function currentBreed() {
+  if (state.breed !== "Alla raser") {
+    return breedLookup.get(state.breed) ?? breeds[0];
+  }
+  const filtered = getFilteredKennels();
+  const groupCounts = new Map();
+  filtered.forEach((row) => {
+    groupCounts.set(row["Ras"], (groupCounts.get(row["Ras"]) || 0) + toNumber(row["Reggade 2019 - 2023"]));
+  });
+  const topBreedName = [...groupCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  return breedLookup.get(topBreedName) ?? breeds[0];
+}
+
 function renderMeta() {
   const totalRegistrations = breeds.reduce((sum, row) => sum + toNumber(row["Reg 2019 - 2023"]), 0);
   elements.metaBlock.innerHTML = `
@@ -222,29 +237,13 @@ function renderFilterOptions() {
     state.breed === "Alla raser"
       ? "Välj eller skriv kennelnamn"
       : `Skriv kennel inom ${state.breed}`;
-  elements.kennelSelect.value = state.selectedKennel ? state.kennelQuery;
-}
-
-function currentBreed() {
-  if (state.breed !== "Alla raser") {
-    return breedLookup.get(state.breed) ? breeds[0];
-  }
-  const filtered = getFilteredKennels();
-  const groupCounts = new Map();
-  filtered.forEach((row) => {
-    groupCounts.set(row["Ras"], (groupCounts.get(row["Ras"]) || 0) + toNumber(row["Reggade 2019 - 2023"]));
-  });
-  const topBreedName = [...groupCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  return breedLookup.get(topBreedName) ? breeds[0];
+  elements.kennelSelect.value = state.selectedKennel ?? state.kennelQuery;
 }
 
 function renderSummaryCards(filteredKennels) {
   const totalRegs = filteredKennels.reduce((sum, row) => sum + toNumber(row["Reggade 2019 - 2023"]), 0);
   const avgMh = filteredKennels.length
     ? filteredKennels.reduce((sum, row) => sum + toNumber(row["MH %"]), 0) / filteredKennels.length
-    : 0;
-  const avgInavel = filteredKennels.length
-    ? filteredKennels.reduce((sum, row) => sum + toNumber(row["Inavel"]), 0) / filteredKennels.length
     : 0;
   const leader = filteredKennels[0];
 
@@ -277,7 +276,7 @@ function renderBreedSection(filteredKennels) {
   elements.breedOverviewTitle.textContent =
     state.breed === "Alla raser" ? "Mest synlig ras i nuvarande urval" : "Detaljvy för vald ras";
 
-  const kennelCount = filteredKennels.filter((row) => row["Ras"] === breed["Ras"]).length;
+  const kennelCount = filteredKennels.filter((row) => breedMatchesSelection(row["Ras"]) && breedFamilyName(row["Ras"]) === breedFamilyName(breed["Ras"])).length;
   elements.breedSpotlight.innerHTML = `
     <h3>${breed["Ras"]}</h3>
     <p class="subtle">Rasprofil baserad på bladet "Alla raser". Kennlar i nuvarande vy: ${kennelCount}.</p>
@@ -337,8 +336,8 @@ function renderScatter(filteredKennels) {
   const width = 560;
   const height = 340;
   const padding = 36;
-  const xMetric = scatterMetrics.find((metric) => metric.key === state.scatterXKey) ? scatterMetrics[0];
-  const yMetric = scatterMetrics.find((metric) => metric.key === state.scatterYKey) ? scatterMetrics[1];
+  const xMetric = scatterMetrics.find((metric) => metric.key === state.scatterXKey) ?? scatterMetrics[0];
+  const yMetric = scatterMetrics.find((metric) => metric.key === state.scatterYKey) ?? scatterMetrics[1];
   const maxX = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterXKey])), 1);
   const maxY = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterYKey])), 1);
 
@@ -383,13 +382,8 @@ function renderScatter(filteredKennels) {
   });
 }
 
-function escapeAttribute(value) {
-  return String(value).replace(/"/g, "&quot;");
-}
-
 function renderKennelDetail(filteredKennels) {
-  const selected =
-    filteredKennels.find((row) => row["Kennel"] === state.selectedKennel) ? filteredKennels[0];
+  const selected = filteredKennels.find((row) => row["Kennel"] === state.selectedKennel) ?? filteredKennels[0];
 
   if (!selected) {
     elements.kennelDetail.innerHTML = `<div class="empty-state">Välj en ras eller sänk filtret för att se kenneldata.</div>`;
@@ -446,10 +440,10 @@ function renderKennelTable(filteredKennels) {
           <td>${row["Kennel"]}</td>
           <td>${row["Ras"]}</td>
           <td>${asInt(row["Reggade 2019 - 2023"])}</td>
-          <td>${asPercent(row["MH %"])}</td>
-          <td>${asPercent(row["HD-Fel %"])}</td>
-          <td>${asPercent(row["ED-Fel %"])}</td>
-          <td>${asPercent(row["MT %"])}</td>
+          <td>${asPercent(row["MH %"])} </td>
+          <td>${asPercent(row["HD-Fel %"])} </td>
+          <td>${asPercent(row["ED-Fel %"])} </td>
+          <td>${asPercent(row["MT %"])} </td>
           <td>${asDecimal(row["Inavel"], 4)}</td>
         </tr>
       `
@@ -509,9 +503,10 @@ function bindEvents() {
 
   elements.kennelSelect.addEventListener("change", (event) => {
     const value = event.target.value.trim();
+    const isExactOption = getKennelOptions().includes(value);
     state.kennelQuery = value;
-    state.kennelExactMatch = Boolean(value);
-    state.selectedKennel = value || null;
+    state.kennelExactMatch = isExactOption;
+    state.selectedKennel = isExactOption ? value : null;
     render();
   });
 
@@ -550,13 +545,6 @@ function bindEvents() {
     state.tableSortDirection = "desc";
     state.minRegistered = 0;
     state.selectedKennel = null;
-
-    elements.breedSelect.value = state.breed;
-    elements.kennelSelect.value = "";
-    elements.sortMetric.value = state.sortKey;
-    elements.scatterXMetric.value = state.scatterXKey;
-    elements.scatterYMetric.value = state.scatterYKey;
-    elements.minRegistered.value = "0";
     render();
   });
 }
