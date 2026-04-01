@@ -17,7 +17,14 @@ const kennelSortOptions = [
   { key: "Reggade 2019 - 2023", label: "Registrerade" },
   { key: "MH %", label: "MH %" },
   { key: "HD Rtg %", label: "HD-röntgen %" },
+  { key: "HD-Fel %", label: "HD-fel %" },
+  { key: "ED Rtg %", label: "ED-röntgen %" },
+  { key: "ED-Fel %", label: "ED-fel %" },
   { key: "MT %", label: "MT %" },
+  { key: "MT GK %", label: "MT GK %" },
+  { key: "Ext/Utst %", label: "Ext/Utst %" },
+  { key: "Andel Bruks", label: "Andel bruks" },
+  { key: "Medel av Skott", label: "Skott" },
   { key: "Inavel", label: "Låg inavel", invert: true },
 ];
 
