@@ -175,10 +175,20 @@ input[type="search"] {
   min-height: 48px;
   line-height: 1.2;
   font: inherit;
+  font-size: 16px;
 }
 
 .plot-controls select {
   min-height: 46px;
+}
+
+select {
+  appearance: auto;
+}
+
+option {
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 input[type="range"] {
