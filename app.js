@@ -124,8 +124,11 @@ function formatMetricValue(metricKey, value) {
     if (metricKey === "Reg 2019 - 2023") {
       return asInt(value);
     }
-    if (metricKey === "Skott" || metricKey === "Kullstorlek" || metricKey === "Inavel") {
-      return asDecimal(value, metricKey === "Inavel" ? 4 : 2);
+    if (metricKey === "Inavel") {
+      return asPercent(value);
+    }
+    if (metricKey === "Skott" || metricKey === "Kullstorlek") {
+      return asDecimal(value, 2);
     }
     if (metricKey.includes("%")) {
       return asPercent(value);
@@ -136,7 +139,7 @@ function formatMetricValue(metricKey, value) {
     return asPercent(value);
   }
   if (metric.type === "decimal") {
-    return asDecimal(value, 4);
+    return metricKey === "Inavel" ? asPercent(value) : asDecimal(value, 4);
   }
   return asInt(value);
 }
@@ -453,7 +456,7 @@ function renderKennelDetail(filteredKennels) {
       <div class="detail-metric"><span>MT %</span><strong>${asPercent(selected["MT %"])}</strong></div>
       <div class="detail-metric"><span>MT GK %</span><strong>${selected["MT GK %"] == null ? "Ingen data" : asPercent(selected["MT GK %"])}</strong></div>
       <div class="detail-metric"><span>Andel bruks</span><strong>${asPercent(selected["Andel Bruks"])}</strong></div>
-      <div class="detail-metric"><span>Inavel</span><strong>${asDecimal(selected["Inavel"], 4)}</strong></div>
+      <div class="detail-metric"><span>Inavel</span><strong>${asPercent(selected["Inavel"])}</strong></div>
     </div>
   `;
 }
@@ -493,7 +496,7 @@ function renderKennelTable(filteredKennels) {
           <td>${asPercent(row["HD-Fel %"])} </td>
           <td>${asPercent(row["ED-Fel %"])} </td>
           <td>${asPercent(row["MT %"])} </td>
-          <td>${asDecimal(row["Inavel"], 4)}</td>
+          <td>${asPercent(row["Inavel"])}</td>
         </tr>
       `
     )
