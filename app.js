@@ -32,11 +32,26 @@ const tableColumns = [
   { key: "Inavel", label: "Inavel", type: "decimal" },
 ];
 
+const scatterMetrics = [
+  { key: "Reggade 2019 - 2023", label: "Registrerade", type: "number" },
+  { key: "MH %", label: "MH %", type: "percent" },
+  { key: "HD Rtg %", label: "HD-r?ntgen %", type: "percent" },
+  { key: "HD-Fel %", label: "HD-fel %", type: "percent" },
+  { key: "ED Rtg %", label: "ED-r?ntgen %", type: "percent" },
+  { key: "ED-Fel %", label: "ED-fel %", type: "percent" },
+  { key: "MT %", label: "MT %", type: "percent" },
+  { key: "Ext/Utst %", label: "Ext/Utst %", type: "percent" },
+  { key: "Andel Bruks", label: "Andel Bruks", type: "percent" },
+  { key: "Inavel", label: "Inavel", type: "decimal" },
+];
+
 const state = {
   breed: "Alla raser",
   kennelQuery: "",
   kennelExactMatch: false,
   sortKey: "Reggade 2019 - 2023",
+  scatterXKey: "Reggade 2019 - 2023",
+  scatterYKey: "MH %",
   tableSortKey: "Reggade 2019 - 2023",
   tableSortDirection: "desc",
   minRegistered: 0,
@@ -49,6 +64,8 @@ const elements = {
   kennelSelect: document.querySelector("#kennelSelect"),
   kennelOptions: document.querySelector("#kennelOptions"),
   sortMetric: document.querySelector("#sortMetric"),
+  scatterXMetric: document.querySelector("#scatterXMetric"),
+  scatterYMetric: document.querySelector("#scatterYMetric"),
   minRegistered: document.querySelector("#minRegistered"),
   minRegisteredValue: document.querySelector("#minRegisteredValue"),
   resetFilters: document.querySelector("#resetFilters"),
@@ -86,6 +103,20 @@ function asDecimal(value, digits = 2) {
 
 function asInt(value) {
   return Math.round(toNumber(value)).toLocaleString("sv-SE");
+}
+
+function formatMetricValue(metricKey, value) {
+  const metric = scatterMetrics.find((item) => item.key === metricKey) || tableColumns.find((item) => item.key === metricKey);
+  if (!metric) {
+    return safeText(value);
+  }
+  if (metric.type === "percent") {
+    return asPercent(value);
+  }
+  if (metric.type === "decimal") {
+    return asDecimal(value, 4);
+  }
+  return asInt(value);
 }
 
 function safeText(value, fallback = "Ingen data") {
@@ -174,6 +205,14 @@ function renderFilterOptions() {
     .map((option) => `<option value="${option.key}">${option.label}</option>`)
     .join("");
   elements.sortMetric.value = state.sortKey;
+
+  const scatterOptionsMarkup = scatterMetrics
+    .map((metric) => `<option value="${metric.key}">${metric.label}</option>`)
+    .join("");
+  elements.scatterXMetric.innerHTML = scatterOptionsMarkup;
+  elements.scatterYMetric.innerHTML = scatterOptionsMarkup;
+  elements.scatterXMetric.value = state.scatterXKey;
+  elements.scatterYMetric.value = state.scatterYKey;
 
   const kennelOptions = getKennelOptions();
   elements.kennelOptions.innerHTML = kennelOptions
@@ -298,15 +337,17 @@ function renderScatter(filteredKennels) {
   const width = 560;
   const height = 340;
   const padding = 36;
-  const maxX = Math.max(...filteredKennels.map((row) => toNumber(row["Reggade 2019 - 2023"])), 1);
-  const maxY = Math.max(...filteredKennels.map((row) => toNumber(row["MH %"])), 1);
+  const xMetric = scatterMetrics.find((metric) => metric.key === state.scatterXKey) ?? scatterMetrics[0];
+  const yMetric = scatterMetrics.find((metric) => metric.key === state.scatterYKey) ?? scatterMetrics[1];
+  const maxX = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterXKey])), 1);
+  const maxY = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterYKey])), 1);
 
   const points = filteredKennels.slice(0, 120).map((row) => {
-    const x = padding + (toNumber(row["Reggade 2019 - 2023"]) / maxX) * (width - padding * 2);
-    const y = height - padding - (toNumber(row["MH %"]) / maxY) * (height - padding * 2);
+    const x = padding + (toNumber(row[state.scatterXKey]) / maxX) * (width - padding * 2);
+    const y = height - padding - (toNumber(row[state.scatterYKey]) / maxY) * (height - padding * 2);
     const radius = 5 + toNumber(row["HD Rtg %"]) * 10;
     const active = state.selectedKennel === row["Kennel"] ? "active" : "";
-    const label = `${row["Kennel"]} | ${row["Ras"]} | ${asInt(row["Reggade 2019 - 2023"])} reg | MH ${asPercent(row["MH %"])}`;
+    const label = `${row["Kennel"]} | ${row["Ras"]} | ${xMetric.label} ${formatMetricValue(state.scatterXKey, row[state.scatterXKey])} | ${yMetric.label} ${formatMetricValue(state.scatterYKey, row[state.scatterYKey])}`;
     return `<circle class="plot-point ${active}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${radius.toFixed(2)}" data-kennel="${escapeAttribute(row["Kennel"])}" data-label="${escapeAttribute(label)}"><title>${row["Kennel"]}</title></circle>`;
   });
 
@@ -315,8 +356,8 @@ function renderScatter(filteredKennels) {
     <svg viewBox="0 0 ${width} ${height}" aria-label="Kennelplot">
       <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="rgba(31,36,48,0.35)"></line>
       <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="rgba(31,36,48,0.35)"></line>
-      <text x="${width / 2}" y="${height - 6}" text-anchor="middle" fill="#5f6b76" font-size="12">Registreringar</text>
-      <text x="14" y="${height / 2}" text-anchor="middle" fill="#5f6b76" font-size="12" transform="rotate(-90 14 ${height / 2})">MH %</text>
+      <text x="${width / 2}" y="${height - 6}" text-anchor="middle" fill="#5f6b76" font-size="12">${xMetric.label}</text>
+      <text x="14" y="${height / 2}" text-anchor="middle" fill="#5f6b76" font-size="12" transform="rotate(-90 14 ${height / 2})">${yMetric.label}</text>
       ${points.join("")}
     </svg>
   `;
@@ -482,6 +523,16 @@ function bindEvents() {
     render();
   });
 
+  elements.scatterXMetric.addEventListener("change", (event) => {
+    state.scatterXKey = event.target.value;
+    render();
+  });
+
+  elements.scatterYMetric.addEventListener("change", (event) => {
+    state.scatterYKey = event.target.value;
+    render();
+  });
+
   elements.minRegistered.addEventListener("input", (event) => {
     state.minRegistered = toNumber(event.target.value);
     state.selectedKennel = null;
@@ -493,6 +544,8 @@ function bindEvents() {
     state.kennelQuery = "";
     state.kennelExactMatch = false;
     state.sortKey = "Reggade 2019 - 2023";
+    state.scatterXKey = "Reggade 2019 - 2023";
+    state.scatterYKey = "MH %";
     state.tableSortKey = "Reggade 2019 - 2023";
     state.tableSortDirection = "desc";
     state.minRegistered = 0;
@@ -501,6 +554,8 @@ function bindEvents() {
     elements.breedSelect.value = state.breed;
     elements.kennelSelect.value = "";
     elements.sortMetric.value = state.sortKey;
+    elements.scatterXMetric.value = state.scatterXKey;
+    elements.scatterYMetric.value = state.scatterYKey;
     elements.minRegistered.value = "0";
     render();
   });

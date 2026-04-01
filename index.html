@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="sv">
   <head>
     <meta charset="UTF-8" />
@@ -78,7 +78,17 @@
           <div>
             <div class="panel-header">
               <h2>Kennelplot</h2>
-              <span class="subtle">X = registreringar, Y = MH %, storlek = HD-röntgen</span>
+              <span class="subtle">Välj själv vilka nyckeltal som ska jämföras</span>
+            </div>
+            <div class="plot-controls">
+              <label>
+                <span>X-axel</span>
+                <select id="scatterXMetric"></select>
+              </label>
+              <label>
+                <span>Y-axel</span>
+                <select id="scatterYMetric"></select>
+              </label>
             </div>
             <div id="scatterWrapper" class="chart-frame"></div>
           </div>
