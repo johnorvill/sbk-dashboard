@@ -156,6 +156,11 @@ th {
   color: var(--muted);
 }
 
+label {
+  display: grid;
+  min-width: 0;
+}
+
 select,
 input[type="search"] {
   width: 100%;
@@ -166,6 +171,10 @@ input[type="search"] {
   color: var(--text);
   padding: 12px 14px;
   font: inherit;
+}
+
+.plot-controls select {
+  min-height: 46px;
 }
 
 input[type="range"] {
