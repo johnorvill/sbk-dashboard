@@ -54,6 +54,7 @@ const scatterMetrics = [
 
 const state = {
   breed: "Alla raser",
+  focusBreed: null,
   kennelQuery: "",
   kennelExactMatch: false,
   sortKey: "Reggade 2019 - 2023",
@@ -120,6 +121,15 @@ function safeText(value, fallback = "Ingen data") {
 function formatMetricValue(metricKey, value) {
   const metric = scatterMetrics.find((item) => item.key === metricKey) || tableColumns.find((item) => item.key === metricKey);
   if (!metric) {
+    if (metricKey === "Reg 2019 - 2023") {
+      return asInt(value);
+    }
+    if (metricKey === "Skott" || metricKey === "Kullstorlek" || metricKey === "Inavel") {
+      return asDecimal(value, metricKey === "Inavel" ? 4 : 2);
+    }
+    if (metricKey.includes("%")) {
+      return asPercent(value);
+    }
     return safeText(value);
   }
   if (metric.type === "percent") {
@@ -138,6 +148,24 @@ function escapeAttribute(value) {
 function scoreKennel(row) {
   const value = toNumber(row[state.sortKey]);
   const option = kennelSortOptions.find((item) => item.key === state.sortKey);
+  return option?.invert ? -value : value;
+}
+
+function breedMetricKey(sortKey) {
+  const metricMap = {
+    "Reggade 2019 - 2023": "Reg 2019 - 2023",
+    "HD Rtg %": "HD-Rtg %",
+    "ED Rtg %": "ED-Rtg %",
+    "MT GK %": "MT % GK",
+    "Medel av Skott": "Skott",
+  };
+  return metricMap[sortKey] ?? sortKey;
+}
+
+function scoreBreed(row) {
+  const key = breedMetricKey(state.sortKey);
+  const option = kennelSortOptions.find((item) => item.key === state.sortKey);
+  const value = toNumber(row[key]);
   return option?.invert ? -value : value;
 }
 
@@ -186,6 +214,9 @@ function getKennelOptions() {
 }
 
 function currentBreed() {
+  if (state.focusBreed) {
+    return breedLookup.get(state.focusBreed) ?? breeds[0];
+  }
   if (state.breed !== "Alla raser") {
     return breedLookup.get(state.breed) ?? breeds[0];
   }
@@ -281,7 +312,7 @@ function renderSummaryCards(filteredKennels) {
 function renderBreedSection(filteredKennels) {
   const breed = currentBreed();
   elements.breedOverviewTitle.textContent =
-    state.breed === "Alla raser" ? "Mest synlig ras i nuvarande urval" : "Detaljvy för vald ras";
+    state.breed === "Alla raser" ? "Detaljvy för vald toppras" : "Detaljvy för vald ras";
 
   const kennelCount = filteredKennels.filter((row) => breedMatchesSelection(row["Ras"]) && breedFamilyName(row["Ras"]) === breedFamilyName(breed["Ras"])).length;
   elements.breedSpotlight.innerHTML = `
@@ -312,19 +343,23 @@ function renderBreedSection(filteredKennels) {
 }
 
 function renderTopBreeds() {
-  const topBreeds = breeds.slice(0, 8);
+  const topBreeds = [...breeds]
+    .sort((a, b) => scoreBreed(b) - scoreBreed(a))
+    .slice(0, 8);
+  const metricKey = breedMetricKey(state.sortKey);
+  const sortLabel = kennelSortOptions.find((item) => item.key === state.sortKey)?.label ?? "Registrerade";
   elements.topBreedsList.innerHTML = topBreeds
     .map(
       (breed, index) => `
-        <article class="rank-item">
+        <article class="rank-item ${currentBreed()["Ras"] === breed["Ras"] ? "active" : ""}" data-breed="${escapeAttribute(breed["Ras"])}">
           <header>
             <div>
               <span class="subtle">#${index + 1}</span>
               <h3>${breed["Ras"]}</h3>
             </div>
             <div>
-              <span class="subtle">Registreringar</span>
-              <strong>${asInt(breed["Reg 2019 - 2023"])}</strong>
+              <span class="subtle">${sortLabel}</span>
+              <strong>${formatMetricValue(metricKey, breed[metricKey])}</strong>
             </div>
           </header>
           <p class="subtle">MH ${asPercent(breed["MH %"])} · HD-fel ${asPercent(breed["HD-Fel %"])} · MT godkända ${asPercent(breed["MT % GK"])}</p>
@@ -332,6 +367,13 @@ function renderTopBreeds() {
       `
     )
     .join("");
+
+  elements.topBreedsList.querySelectorAll("[data-breed]").forEach((item) => {
+    item.addEventListener("click", () => {
+      state.focusBreed = item.dataset.breed;
+      render();
+    });
+  });
 }
 
 function renderScatter(filteredKennels) {
@@ -493,6 +535,7 @@ function render() {
 function bindEvents() {
   elements.breedSelect.addEventListener("change", (event) => {
     state.breed = event.target.value;
+    state.focusBreed = null;
     state.kennelQuery = "";
     state.kennelExactMatch = false;
     state.selectedKennel = null;
@@ -519,6 +562,7 @@ function bindEvents() {
 
   elements.sortMetric.addEventListener("change", (event) => {
     state.sortKey = event.target.value;
+    state.focusBreed = null;
     state.selectedKennel = null;
     state.tableSortKey = event.target.value;
     state.tableSortDirection = "desc";
@@ -537,12 +581,14 @@ function bindEvents() {
 
   elements.minRegistered.addEventListener("input", (event) => {
     state.minRegistered = toNumber(event.target.value);
+    state.focusBreed = null;
     state.selectedKennel = null;
     render();
   });
 
   elements.resetFilters.addEventListener("click", () => {
     state.breed = "Alla raser";
+    state.focusBreed = null;
     state.kennelQuery = "";
     state.kennelExactMatch = false;
     state.sortKey = "Reggade 2019 - 2023";
