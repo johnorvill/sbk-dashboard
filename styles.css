@@ -351,6 +351,16 @@ input[type="range"] {
   background: rgba(244, 239, 231, 0.72);
 }
 
+.detail-metric span {
+  display: block;
+  color: var(--muted);
+}
+
+.detail-metric strong {
+  display: block;
+  margin-top: 6px;
+}
+
 .table-wrapper {
   overflow: auto;
 }

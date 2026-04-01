@@ -222,12 +222,12 @@ function renderFilterOptions() {
     state.breed === "Alla raser"
       ? "Välj eller skriv kennelnamn"
       : `Skriv kennel inom ${state.breed}`;
-  elements.kennelSelect.value = state.selectedKennel ?? state.kennelQuery;
+  elements.kennelSelect.value = state.selectedKennel ? state.kennelQuery;
 }
 
 function currentBreed() {
   if (state.breed !== "Alla raser") {
-    return breedLookup.get(state.breed) ?? breeds[0];
+    return breedLookup.get(state.breed) ? breeds[0];
   }
   const filtered = getFilteredKennels();
   const groupCounts = new Map();
@@ -235,7 +235,7 @@ function currentBreed() {
     groupCounts.set(row["Ras"], (groupCounts.get(row["Ras"]) || 0) + toNumber(row["Reggade 2019 - 2023"]));
   });
   const topBreedName = [...groupCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  return breedLookup.get(topBreedName) ?? breeds[0];
+  return breedLookup.get(topBreedName) ? breeds[0];
 }
 
 function renderSummaryCards(filteredKennels) {
@@ -337,8 +337,8 @@ function renderScatter(filteredKennels) {
   const width = 560;
   const height = 340;
   const padding = 36;
-  const xMetric = scatterMetrics.find((metric) => metric.key === state.scatterXKey) ?? scatterMetrics[0];
-  const yMetric = scatterMetrics.find((metric) => metric.key === state.scatterYKey) ?? scatterMetrics[1];
+  const xMetric = scatterMetrics.find((metric) => metric.key === state.scatterXKey) ? scatterMetrics[0];
+  const yMetric = scatterMetrics.find((metric) => metric.key === state.scatterYKey) ? scatterMetrics[1];
   const maxX = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterXKey])), 1);
   const maxY = Math.max(...filteredKennels.map((row) => toNumber(row[state.scatterYKey])), 1);
 
@@ -389,7 +389,7 @@ function escapeAttribute(value) {
 
 function renderKennelDetail(filteredKennels) {
   const selected =
-    filteredKennels.find((row) => row["Kennel"] === state.selectedKennel) ?? filteredKennels[0];
+    filteredKennels.find((row) => row["Kennel"] === state.selectedKennel) ? filteredKennels[0];
 
   if (!selected) {
     elements.kennelDetail.innerHTML = `<div class="empty-state">Välj en ras eller sänk filtret för att se kenneldata.</div>`;
