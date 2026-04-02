@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-labelledby="title">
+  <title>SBK-logga</title>
+  <defs>
+    <path id="topArc" d="M 65 210 A 145 145 0 0 1 355 210" />
+    <path id="bottomArc" d="M 355 210 A 145 145 0 0 1 65 210" />
+  </defs>
+  <circle cx="210" cy="210" r="175" fill="#183a68" stroke="#ffce44" stroke-width="10" />
+  <circle cx="210" cy="210" r="132" fill="#f7f9fc" stroke="#ffce44" stroke-width="8" />
+  <g fill="#183a68">
+    <path d="M229 102c17 11 33 47 30 83-2 23-11 45-7 69 3 21 13 40 10 58-18-15-25-38-31-59-5 21-13 45-31 59-3-18 7-37 10-58 4-24-5-46-7-69-3-36 13-72 30-83l-2 44 12 15 12-15-2-44z"/>
+    <path d="M170 165c-34 6-63 22-85 54 18-7 38-6 56-4l-30 21 20 3-16 10 17 4c18 4 39 5 58 1 21-4 38-14 51-28-15-15-43-25-71-24z"/>
+    <path d="M251 167c31 2 60 18 84 48-18-5-37-4-56-2l31 20-21 4 17 9-16 5c-19 5-41 8-61 5-22-3-42-13-56-27 16-17 46-27 78-29z"/>
+    <path d="M165 271c24 15 67 15 91 0-13 28-28 49-46 49-19 0-35-21-45-49z"/>
+    <circle cx="168" cy="204" r="6"/>
+    <circle cx="252" cy="204" r="6"/>
+  </g>
+  <text font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#ffce44">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">SVENSKA</textPath>
+  </text>
+  <text font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#ffce44">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">BRUKSHUNDKLUBBEN</textPath>
+  </text>
+</svg>

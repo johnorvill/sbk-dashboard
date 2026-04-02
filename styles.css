@@ -46,9 +46,26 @@ body {
   border-radius: 28px;
   padding: 28px;
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 1.7fr) auto minmax(260px, 1fr);
   gap: 24px;
-  align-items: start;
+  align-items: center;
+}
+
+.hero-copy {
+  min-width: 0;
+}
+
+.hero-logo-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero-logo {
+  width: clamp(140px, 16vw, 230px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 10px 18px rgba(6, 20, 44, 0.12));
 }
 
 .eyebrow {
@@ -301,15 +318,15 @@ input[type="range"] {
 
 .plot-point {
   cursor: pointer;
-  fill: rgba(187, 77, 0, 0.65);
-  stroke: rgba(134, 49, 0, 0.9);
-  stroke-width: 1.5;
+  fill: rgba(24, 58, 104, 0.9);
+  stroke: rgba(255, 206, 68, 1);
+  stroke-width: 2.2;
   transition: transform 160ms ease, fill 160ms ease;
 }
 
 .plot-point:hover,
 .plot-point.active {
-  fill: rgba(15, 118, 110, 0.82);
+  fill: rgba(38, 88, 153, 1);
 }
 
 .chart-tooltip {
@@ -418,6 +435,10 @@ tbody tr:hover {
   .spotlight-grid,
   .plot-controls {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
   }
 }
 
