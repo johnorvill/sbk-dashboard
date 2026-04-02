@@ -57,8 +57,9 @@ body {
 
 .hero-logo-wrap {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
+  margin-left: -16px;
 }
 
 .hero-logo {
